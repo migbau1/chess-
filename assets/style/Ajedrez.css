@@ -1,0 +1,9 @@
+#lienzoss{
+    position: relative;
+    width: 500px;
+    height: 500px;
+}
+
+canvas {
+    position: absolute;
+}

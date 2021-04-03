@@ -1,19 +1,33 @@
 const lienzo = document.getElementById("lienzo");
+const boardPieces = document.getElementById("boardPieces");
+
 const lienzoWidth = lienzo.width;
 const lienzoHeigth = lienzo.height;
 
 const ctx = lienzo.getContext("2d");
+const ctx2 = boardPieces.getContext("2d");
 const rect = lienzo.getBoundingClientRect();
 
 let historySquares = [];
-let count = 0;
+let historyPieces = [];
+
+let dragOk = false;
+let positionX;
+let postionY;
 
 document.addEventListener("DOMContentLoaded", (e) => {
   ctx.fillStyle = "#000000";
   const board = ctx.fillRect(0, 0, lienzoWidth, lienzoHeigth);
 
   drawSquares();
+  putPieces();
   lienzo.onmousedown = mouseDown;
+  lienzo.onmouseup = mouseUp;
+  lienzo.onmousemove = mouseMove;
+
+  boardPieces.onmousedown = mouseDown;
+  boardPieces.onmouseup = mouseUp;
+  boardPieces.onmousemove = mouseMove;
 });
 
 class Square {
@@ -38,12 +52,15 @@ class Square {
 }
 
 class Piece {
-  constructor(name, x, y, color, pic) {
+  constructor(name, x, y, color, pic, draggable = false) {
     this.name = name;
     this.x = x;
     this.y = y;
     this.color = color;
     this.pic = pic;
+    this.draggable = draggable;
+    this.w = lienzoHeigth / 8;
+    this.h = lienzoHeigth / 8;
   }
 }
 
@@ -55,7 +72,7 @@ function drawSquares() {
   let py = 500 - sizeLimit;
 
   let color = "black";
-
+  let count = 0;
   let alphabet = "abcdefghi";
 
   for (let i = limit; i > 0; i--) {
@@ -84,7 +101,77 @@ function draw(x, y, color, name) {
   ctx.fillRect(squ.x, squ.y, squ.w, squ.h);
 }
 
+function putPieces() {
+  let piece = new Piece("torre", 0, 437.5, "white", "./assets/img/wr.svg");
+  createPiece(piece.x, piece.y, piece.w, piece.h, piece.pic);
+}
+
+function createPiece(x, y, w, h, pic) {
+
+  let img = new Image();
+  img.onload = () => {
+    clear(0, 0, w, h)
+    ctx2.drawImage(img, x, y, w, h);
+  };
+  img.src = pic;
+}
+
+function clear(x, y, w, h) {
+  ctx2.clearRect(x, y, boardPieces.width, boardPieces.height);
+}
+
+//this function in in charge of display info to square selected recursively
+function infoSquareSelected(array, itemX, itemY) {
+  let puntoMedio = Math.floor(array.length / 2);
+
+  if (array.length <= 8) {
+    if (array.length === 1) {
+      return array[puntoMedio];
+    }
+
+    if (itemX >= array[puntoMedio].x) {
+      return arguments.callee(array.slice(puntoMedio), itemX, itemY);
+    }
+
+    if (itemX <= array[puntoMedio].x) {
+      return arguments.callee(array.slice(0, puntoMedio), itemX, itemY);
+    }
+  }
+
+  if (
+    array.length <= puntoMedio &&
+    itemY >= array[puntoMedio].y &&
+    itemY <= array[puntoMedio + 8].y
+  ) {
+    return arguments.callee(
+      array.slice(puntoMedio, puntoMedio + 8),
+      itemX,
+      itemY
+    );
+  }
+
+  if (itemY >= array[puntoMedio].y) {
+    return arguments.callee(array.slice(puntoMedio), itemX, itemY);
+  }
+
+  if (
+    array.length <= puntoMedio &&
+    itemY <= array[puntoMedio].y &&
+    itemY >= array[puntoMedio - 8].y
+  ) {
+    return arguments.callee(array.slice(puntoMedio - 8, puntoMedio));
+  }
+
+  if (itemY <= array[puntoMedio].y) {
+    return arguments.callee(array.slice(0, puntoMedio), itemX, itemY);
+  }
+}
+
 function mouseDown(e) {
+  // tell the browser we're handling this mouse event
+  e.preventDefault();
+  e.stopPropagation();
+
   let limit = 8;
   let heightMax = lienzoWidth / limit;
   let sizeMax = lienzoHeigth - heightMax;
@@ -103,52 +190,26 @@ function mouseDown(e) {
   });
 
   let value = infoSquareSelected(orderArray, rx, ry);
-  console.log(value);
+  dragOk = true;
 }
 
-//this function in in charge of display info to square selected recursively
-function infoSquareSelected(array, itemX, itemY) {
-  let puntoMedio = Math.floor(array.length / 2);
+function mouseUp(e) {
+  // tell the browser we're handling this mouse event
+  e.preventDefault();
+  e.stopPropagation();
+  dragOk = false;
+}
 
-  if (array.length <= 8) {
-    if (array.length === 1) {
-      return array[puntoMedio];
-    }
+function mouseMove(e) {
+  // tell the browser we're handling this mouse event
+  e.preventDefault();
+  e.stopPropagation();
 
-    if (itemX > array[puntoMedio].x) {
-      return arguments.callee(array.slice(puntoMedio), itemX, itemY);
-    }
+  let rx = e.clientX - rect.left;
+  let ry = e.clientY - rect.top;
 
-    if (itemX < array[puntoMedio].x) {
-      return arguments.callee(array.slice(0, puntoMedio), itemX, itemY);
-    }
-  }
-
-  if (
-    array.length <= puntoMedio &&
-    itemY > array[puntoMedio].y &&
-    itemY < array[puntoMedio + 8].y
-  ) {
-    return arguments.callee(
-      array.slice(puntoMedio, puntoMedio + 8),
-      itemX,
-      itemY
-    );
-  }
-
-  if (itemY > array[puntoMedio].y) {
-    return arguments.callee(array.slice(puntoMedio), itemX, itemY);
-  }
-
-  if (
-    array.length <= puntoMedio &&
-    itemY < array[puntoMedio].y &&
-    itemY > array[puntoMedio - 8].y
-  ) {
-    return arguments.callee(array.slice(puntoMedio - 8, puntoMedio));
-  }
-
-  if (itemY < array[puntoMedio].y) {
-    return arguments.callee(array.slice(0, puntoMedio), itemX, itemY);
+  
+  if (dragOk) {
+    createPiece(rx - (62.5 / 2), ry - (62.5 /2), 62.5, 62.5, "./assets/img/wr.svg");
   }
 }
