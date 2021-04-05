@@ -15,8 +15,10 @@ let dragOk = false;
 let positionX;
 let postionY;
 
-let lastPositionX = 0;
-let lastPositionY = 0;
+let lastPositionX;
+let lastPositionY;
+
+let colorInit = "white";
 
 let disponble;
 
@@ -286,24 +288,38 @@ function usedSquared(square) {
 }
 
 function legalMovement(piece, arraySquares) {
+
   let availableMovements = [];
+  let value
+
+  const orderArray = historySquares.sort((a, b) => {
+    if (a.y > b.y) {
+      return 1;
+    }
+    if (a.y < b.y) {
+      return -1;
+    }
+    return 0;
+  });
+
 
   switch (piece.name) {
     case "wp":
+      value = infoSquareSelected(orderArray, piece.x, piece.y - 62.5);
+
+      if (usedSquared(value) !== false) {
+        availableMovements = []
+        break
+      }
+
       if (piece.y < lienzoHeigth - 62.5 * 2) {
         availableMovements.push(
           infoSquareSelected(arraySquares, piece.x, piece.y - 62.5)
         );
-        // ctx2.fillStyle = "green";
-        // ctx2.fillRect(piece.x, piece.y - 62.5, piece.w, piece.h);
       } else {
-        // ctx2.fillStyle = "green";
-        // ctx2.fillRect(piece.x, piece.y - 62.5, piece.w, piece.h);
         availableMovements.push(
           infoSquareSelected(arraySquares, piece.x, piece.y - 62.5)
         );
-        // ctx2.fillStyle = "green";
-        // ctx2.fillRect(piece.x, piece.y - 62.5 * 2, piece.w, piece.h);
         availableMovements.push(
           infoSquareSelected(arraySquares, piece.x, piece.y - 62.5 * 2)
         );
@@ -311,27 +327,30 @@ function legalMovement(piece, arraySquares) {
       break;
 
     case "bp":
+      value = infoSquareSelected(orderArray, piece.x, piece.y + 62.5);
+
+      if (usedSquared(value) !== false) {
+        availableMovements = []
+        break
+      }
+
       if (piece.y > 62.5) {
         availableMovements.push(
           infoSquareSelected(arraySquares, piece.x, piece.y + 62.5)
         );
-
-        // ctx2.fillStyle = "green";
-        // ctx2.fillRect(piece.x, piece.y + 62.5, piece.w, piece.h);
       } else {
-        // ctx2.fillStyle = "green";
-        // ctx2.fillRect(piece.x, piece.y + 62.5, piece.w, piece.h);
         availableMovements.push(
           infoSquareSelected(arraySquares, piece.x, piece.y + 62.5)
         );
-
-        // ctx2.fillStyle = "green";
-        // ctx2.fillRect(piece.x, piece.y + 62.5 * 2, piece.w, piece.h);
         availableMovements.push(
           infoSquareSelected(arraySquares, piece.x, piece.y + 62.5 * 2)
         );
       }
       break;
+    
+    case 'wrl':
+      
+    break
 
     case piece === false:
       availableMovements = [];
@@ -387,7 +406,11 @@ function mouseDown(e) {
     legalMovement(response, orderArray);
     for (let i = 0; i < historyPieces.length; i++) {
       const element = historyPieces[i];
-      if (element.x === response.x && element.y === response.y) {
+      if (
+        element.x === response.x &&
+        element.y === response.y &&
+        colorInit === element.color
+      ) {
         dragOk = true;
         element.draggable = true;
       }
@@ -404,6 +427,8 @@ function mouseUp(e) {
   // tell the browser we're handling this mouse event
   e.preventDefault();
   e.stopPropagation();
+
+  let mysound = new chessMoveAudio("./assets/audio/chessmove.wav");
 
   let rx = e.clientX - rect.left;
   let ry = e.clientY - rect.top;
@@ -430,8 +455,10 @@ function mouseUp(e) {
     if (element.draggable && canMove(moveFin)) {
       element.x = moveFin.x;
       element.y = moveFin.y;
-    } else if (element.draggable) {
+      mysound.play();
 
+      colorInit === "white" ? (colorInit = "black") : (colorInit = "white");
+    } else if (element.draggable) {
       element.x = element.x + lastPositionX;
       element.y = element.y + lastPositionY;
     }
@@ -470,4 +497,19 @@ function mouseMove(e) {
     positionX = rx;
     postionY = ry;
   }
+}
+
+function chessMoveAudio(src) {
+  this.sound = document.createElement("audio");
+  this.sound.src = src;
+  this.sound.setAttribute("preload", "auto");
+  this.sound.setAttribute("controls", "none");
+  this.sound.style.display = "none";
+  document.body.appendChild(this.sound);
+  this.play = function () {
+    this.sound.play();
+  };
+  this.stop = function () {
+    this.sound.pause();
+  };
 }
