@@ -15,6 +15,11 @@ let dragOk = false;
 let positionX;
 let postionY;
 
+let lastPositionX = 0;
+let lastPositionY = 0;
+
+let disponble;
+
 document.addEventListener("DOMContentLoaded", (e) => {
   ctx.fillStyle = "#000000";
   const board = ctx.fillRect(0, 0, lienzoWidth, lienzoHeigth);
@@ -132,7 +137,7 @@ function createPieces() {
   wrr.pic.src = "./assets/img/wr.svg";
 
   for (i = 0; i < 8; i++) {
-    let wp = new Piece(`wp${i}`, limit * i, lienzoWidth - limit * 2, "white");
+    let wp = new Piece(`wp`, limit * i, lienzoWidth - limit * 2, "white");
     wp.pic.src = "./assets/img/wp.svg";
     historyPieces.push(wp);
   }
@@ -163,7 +168,7 @@ function createPieces() {
   brr.pic.src = "./assets/img/br.svg";
 
   for (i = 0; i < 8; i++) {
-    let bp = new Piece(`bp${i}`, limit * i, limit, "black");
+    let bp = new Piece(`bp`, limit * i, limit, "black");
     bp.pic.src = "./assets/img/bp.svg";
     historyPieces.push(bp);
   }
@@ -190,8 +195,6 @@ function createPieces() {
 
 function printPieces() {
   ctx2.clearRect(0, 0, lienzoWidth, lienzoHeigth);
-  // ctx2.fillStyle = "rgba(255, 255, 255, 0)";
-  // ctx2.rect(0, 0, 500, 500);
 
   for (let i = 0; i < historyPieces.length; i++) {
     const element = historyPieces[i];
@@ -254,19 +257,107 @@ function infoSquareSelected(array, itemX, itemY) {
 }
 
 //this function verified if square is available
-function usedSquared(square, listPieces) {
+function usedSquared(square) {
   let found = false;
   let position = -1;
   let index = 0;
 
-  while (!found && index < listPieces.length) {
-    if (listPieces[index].x === square.x && listPieces[index].y === square.y) {
+  const orderListPieces = historyPieces.sort((a, b) => {
+    if (a.y > b.y) {
+      return 1;
+    }
+    if (a.y < b.y) {
+      return -1;
+    }
+    return 0;
+  });
+
+  while (!found && index < orderListPieces.length) {
+    if (
+      orderListPieces[index].x === square.x &&
+      orderListPieces[index].y === square.y
+    ) {
       found = true;
       position = index;
     }
     index++;
   }
-  return position === -1 ? undefined : listPieces[position];
+  return position === -1 ? false : orderListPieces[position];
+}
+
+function legalMovement(piece, arraySquares) {
+  let availableMovements = [];
+
+  switch (piece.name) {
+    case "wp":
+      if (piece.y < lienzoHeigth - 62.5 * 2) {
+        availableMovements.push(
+          infoSquareSelected(arraySquares, piece.x, piece.y - 62.5)
+        );
+        // ctx2.fillStyle = "green";
+        // ctx2.fillRect(piece.x, piece.y - 62.5, piece.w, piece.h);
+      } else {
+        // ctx2.fillStyle = "green";
+        // ctx2.fillRect(piece.x, piece.y - 62.5, piece.w, piece.h);
+        availableMovements.push(
+          infoSquareSelected(arraySquares, piece.x, piece.y - 62.5)
+        );
+        // ctx2.fillStyle = "green";
+        // ctx2.fillRect(piece.x, piece.y - 62.5 * 2, piece.w, piece.h);
+        availableMovements.push(
+          infoSquareSelected(arraySquares, piece.x, piece.y - 62.5 * 2)
+        );
+      }
+      break;
+
+    case "bp":
+      if (piece.y > 62.5) {
+        availableMovements.push(
+          infoSquareSelected(arraySquares, piece.x, piece.y + 62.5)
+        );
+
+        // ctx2.fillStyle = "green";
+        // ctx2.fillRect(piece.x, piece.y + 62.5, piece.w, piece.h);
+      } else {
+        // ctx2.fillStyle = "green";
+        // ctx2.fillRect(piece.x, piece.y + 62.5, piece.w, piece.h);
+        availableMovements.push(
+          infoSquareSelected(arraySquares, piece.x, piece.y + 62.5)
+        );
+
+        // ctx2.fillStyle = "green";
+        // ctx2.fillRect(piece.x, piece.y + 62.5 * 2, piece.w, piece.h);
+        availableMovements.push(
+          infoSquareSelected(arraySquares, piece.x, piece.y + 62.5 * 2)
+        );
+      }
+      break;
+
+    case piece === false:
+      availableMovements = [];
+      break;
+
+    default:
+      break;
+  }
+  disponble = availableMovements;
+  return availableMovements;
+}
+
+function canMove(move) {
+  let found = false;
+  let position = -1;
+  let index = 0;
+
+  while ((!found, index < disponble.length)) {
+    if (disponble[index].x === move.x && disponble[index].y === move.y) {
+      found = true;
+      position = index;
+    }
+    index++;
+  }
+
+  return position === -1 ? false : true;
 }
 
 function mouseDown(e) {
@@ -289,20 +380,11 @@ function mouseDown(e) {
 
   let value = infoSquareSelected(orderArray, rx, ry);
 
-  const orderListPieces = historyPieces.sort((a, b) => {
-    if (a.y > b.y) {
-      return 1;
-    }
-    if (a.y < b.y) {
-      return -1;
-    }
-    return 0;
-  });
-
-  let response = usedSquared(value, orderListPieces);
+  let response = usedSquared(value);
 
   dragOk = false;
   if (response !== undefined) {
+    legalMovement(response, orderArray);
     for (let i = 0; i < historyPieces.length; i++) {
       const element = historyPieces[i];
       if (element.x === response.x && element.y === response.y) {
@@ -312,6 +394,9 @@ function mouseDown(e) {
     }
     positionX = rx;
     postionY = ry;
+
+    lastPositionX = 0;
+    lastPositionY = 0;
   }
 }
 
@@ -333,18 +418,27 @@ function mouseUp(e) {
     return 0;
   });
 
-  let prox = infoSquareSelected(orderArray, rx, ry);
-
+  let moveFin = infoSquareSelected(orderArray, rx, ry);
   dragOk = false;
+
+  if (disponble.length <= 0) {
+    printPieces();
+  }
+
   for (let i = 0; i < historyPieces.length; i++) {
     const element = historyPieces[i];
-    if (element.draggable) {
-      element.x = prox.x;
-      element.y = prox.y;
+    if (element.draggable && canMove(moveFin)) {
+      element.x = moveFin.x;
+      element.y = moveFin.y;
+    } else if (element.draggable) {
+
+      element.x = element.x + lastPositionX;
+      element.y = element.y + lastPositionY;
     }
     element.draggable = false;
   }
-  printPieces()
+
+  printPieces();
 }
 
 function mouseMove(e) {
@@ -369,6 +463,9 @@ function mouseMove(e) {
     }
 
     printPieces();
+
+    lastPositionX -= dx;
+    lastPositionY -= dy;
 
     positionX = rx;
     postionY = ry;
