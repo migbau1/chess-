@@ -200,7 +200,15 @@ function printPieces() {
 
   for (let i = 0; i < historyPieces.length; i++) {
     const element = historyPieces[i];
+    if (element.draggable) {
+      printSquaresAvailables();
+    }
+  }
+
+  for (let i = 0; i < historyPieces.length; i++) {
+    const element = historyPieces[i];
     let isLoaded = element.pic.complete && Image.naturalHeight !== 0;
+
     if (!isLoaded) {
       element.pic.onload = () => {
         ctx2.drawImage(element.pic, element.x, element.y, element.w, element.h);
@@ -288,9 +296,9 @@ function usedSquared(square) {
 }
 
 function legalMovement(piece, arraySquares) {
-
   let availableMovements = [];
-  let value
+  let value;
+  let valueLeft, valueRight;
 
   const orderArray = historySquares.sort((a, b) => {
     if (a.y > b.y) {
@@ -302,17 +310,149 @@ function legalMovement(piece, arraySquares) {
     return 0;
   });
 
-
   switch (piece.name) {
     case "wp":
       value = infoSquareSelected(orderArray, piece.x, piece.y - 62.5);
 
+      valueLeft = infoSquareSelected(
+        orderArray,
+        piece.x - 62.5,
+        piece.y - 62.5
+      );
+
+      valueRight = infoSquareSelected(
+        orderArray,
+        piece.x + 62.5,
+        piece.y - 62.5
+      );
+
+      if (
+        usedSquared(valueLeft).color !== piece.color &&
+        usedSquared(valueLeft) !== false &&
+        usedSquared(valueRight).color !== piece.color &&
+        usedSquared(valueRight) !== false &&
+        usedSquared(value) !== false &&
+        usedSquared(valueLeft).x !== piece.x &&
+        usedSquared(valueRight).x !== piece.x
+      ) {
+        availableMovements.push(
+          usedSquared(valueLeft),
+          usedSquared(valueRight)
+        );
+        break;
+      }
+
+      if (
+        usedSquared(valueLeft).color !== piece.color &&
+        usedSquared(valueLeft) !== false &&
+        usedSquared(valueRight).color !== piece.color &&
+        usedSquared(valueRight) !== false &&
+        usedSquared(valueLeft).x !== piece.x &&
+        usedSquared(valueRight).x !== piece.x
+      ) {
+        if (piece.y < lienzoHeigth - 62.5 * 2) {
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y - 62.5),
+            usedSquared(valueLeft),
+            usedSquared(valueRight)
+          );
+        } else {
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y - 62.5),
+            usedSquared(valueLeft),
+            usedSquared(valueRight)
+          );
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y - 62.5 * 2),
+            usedSquared(valueLeft),
+            usedSquared(valueRight)
+          );
+        }
+        break;
+      }
+
+      if (
+        usedSquared(value) !== false &&
+        usedSquared(valueLeft).color !== piece.color &&
+        usedSquared(valueLeft) !== false &&
+        usedSquared(valueLeft).x !== piece.x
+      ) {
+        availableMovements.push(usedSquared(valueLeft));
+        break;
+      }
+
+      if (
+        usedSquared(valueLeft).color !== piece.color &&
+        usedSquared(valueLeft) !== false &&
+        usedSquared(valueLeft).x !== piece.x
+      ) {
+        if (piece.y < lienzoHeigth - 62.5 * 2) {
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y - 62.5),
+            usedSquared(valueLeft)
+          );
+        } else {
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y - 62.5),
+            usedSquared(valueLeft)
+          );
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y - 62.5 * 2),
+            usedSquared(valueLeft)
+          );
+        }
+        break;
+      }
+      //aaaaaaaaaaaaaaaaaaaaa
+
+      if (
+        usedSquared(valueRight).color !== piece.color &&
+        usedSquared(valueRight) !== false &&
+        usedSquared(value) !== false &&
+        usedSquared(valueRight).x !== piece.x
+      ) {
+        availableMovements.push(usedSquared(valueRight));
+        break;
+      }
+
+      if (
+        usedSquared(valueRight).color !== piece.color &&
+        usedSquared(valueRight) !== false &&
+        usedSquared(valueRight).x !== piece.x
+      ) {
+        if (piece.y < lienzoHeigth - 62.5 * 2) {
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y - 62.5),
+            usedSquared(valueRight)
+          );
+        } else {
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y - 62.5),
+            usedSquared(valueRight)
+          );
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y - 62.5 * 2),
+            usedSquared(valueRight)
+          );
+        }
+        break;
+      }
+
       if (usedSquared(value) !== false) {
-        availableMovements = []
-        break
+        availableMovements = [];
+        break;
       }
 
       if (piece.y < lienzoHeigth - 62.5 * 2) {
+        availableMovements.push(
+          infoSquareSelected(arraySquares, piece.x, piece.y - 62.5)
+        );
+      } else if (
+        piece.y < lienzoHeigth - 62.5 &&
+        usedSquared(
+          infoSquareSelected(orderArray, piece.x, piece.y - 62.5 * 2)
+        ) !== false
+      ) {
         availableMovements.push(
           infoSquareSelected(arraySquares, piece.x, piece.y - 62.5)
         );
@@ -329,12 +469,145 @@ function legalMovement(piece, arraySquares) {
     case "bp":
       value = infoSquareSelected(orderArray, piece.x, piece.y + 62.5);
 
+      valueLeft = infoSquareSelected(
+        orderArray,
+        piece.x - 62.5,
+        piece.y + 62.5
+      );
+
+      valueRight = infoSquareSelected(
+        orderArray,
+        piece.x + 62.5,
+        piece.y + 62.5
+      );
+
+      if (
+        usedSquared(valueLeft).color !== piece.color &&
+        usedSquared(valueLeft) !== false &&
+        usedSquared(valueRight).color !== piece.color &&
+        usedSquared(valueRight) !== false &&
+        usedSquared(value) !== false &&
+        usedSquared(valueLeft).x !== piece.x &&
+        usedSquared(valueRight).x !== piece.x
+      ) {
+        availableMovements.push(
+          usedSquared(valueLeft),
+          usedSquared(valueRight)
+        );
+        break;
+      }
+
+      if (
+        usedSquared(valueLeft).color !== piece.color &&
+        usedSquared(valueLeft) !== false &&
+        usedSquared(valueRight).color !== piece.color &&
+        usedSquared(valueRight) !== false &&
+        usedSquared(valueLeft).x !== piece.x &&
+        usedSquared(valueRight).x !== piece.x
+      ) {
+        if (piece.y > 62.5) {
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y + 62.5),
+            usedSquared(valueLeft),
+            usedSquared(valueRight)
+          );
+        } else {
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y + 62.5),
+            usedSquared(valueLeft),
+            usedSquared(valueRight)
+          );
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y + 62.5 * 2),
+            usedSquared(valueLeft),
+            usedSquared(valueRight)
+          );
+        }
+        break;
+      }
+
+      if (
+        usedSquared(valueLeft).color !== piece.color &&
+        usedSquared(valueLeft) !== false &&
+        usedSquared(value) !== false &&
+        usedSquared(valueLeft).x !== piece.x
+      ) {
+        availableMovements.push(usedSquared(valueLeft));
+        break;
+      }
+
+      if (
+        usedSquared(valueLeft).color !== piece.color &&
+        usedSquared(valueLeft) !== false &&
+        usedSquared(valueLeft).x !== piece.x
+      ) {
+        if (piece.y > 62.5) {
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y + 62.5),
+            usedSquared(valueLeft)
+          );
+        } else {
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y + 62.5),
+            usedSquared(valueLeft)
+          );
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y + 62.5 * 2),
+            usedSquared(valueLeft)
+          );
+        }
+        break;
+      }
+      //aaaaaaaaaaaaaaaaaaaaa
+
+      if (
+        usedSquared(valueRight).color !== piece.color &&
+        usedSquared(valueRight) !== false &&
+        usedSquared(value) !== false &&
+        usedSquared(valueRight).x !== piece.x
+      ) {
+        availableMovements.push(usedSquared(valueRight));
+        break;
+      }
+
+      if (
+        usedSquared(valueRight).color !== piece.color &&
+        usedSquared(valueRight) !== false &&
+        usedSquared(valueRight).x !== piece.x
+      ) {
+        if (piece.y > 62.5) {
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y + 62.5),
+            usedSquared(valueRight)
+          );
+        } else {
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y + 62.5),
+            usedSquared(valueRight)
+          );
+          availableMovements.push(
+            infoSquareSelected(arraySquares, piece.x, piece.y + 62.5 * 2),
+            usedSquared(valueRight)
+          );
+        }
+        break;
+      }
+
       if (usedSquared(value) !== false) {
-        availableMovements = []
-        break
+        availableMovements = [];
+        break;
       }
 
       if (piece.y > 62.5) {
+        availableMovements.push(
+          infoSquareSelected(arraySquares, piece.x, piece.y + 62.5)
+        );
+      } else if (
+        piece.y === 62.5 &&
+        usedSquared(
+          infoSquareSelected(orderArray, piece.x, piece.y + 62.5 * 2)
+        ) !== false
+      ) {
         availableMovements.push(
           infoSquareSelected(arraySquares, piece.x, piece.y + 62.5)
         );
@@ -347,10 +620,10 @@ function legalMovement(piece, arraySquares) {
         );
       }
       break;
-    
-    case 'wrl':
+
+    case "wrl":
       
-    break
+      break;
 
     case piece === false:
       availableMovements = [];
@@ -379,6 +652,24 @@ function canMove(move) {
   return position === -1 ? false : true;
 }
 
+function deletePiece(piece) {
+
+  let result = historyPieces.filter((value) => {
+    return piece !== value;
+  });
+
+  historyPieces = result;
+}
+
+function printSquaresAvailables() {
+  if (disponble !== undefined) {
+    for (const legal of disponble) {
+      ctx2.fillStyle = "rgba(103, 128, 159, .8)";
+      ctx2.fillRect(legal.x, legal.y, legal.w, legal.h);
+    }
+  }
+}
+
 function mouseDown(e) {
   // tell the browser we're handling this mouse event
   e.preventDefault();
@@ -404,6 +695,7 @@ function mouseDown(e) {
   dragOk = false;
   if (response !== undefined) {
     legalMovement(response, orderArray);
+
     for (let i = 0; i < historyPieces.length; i++) {
       const element = historyPieces[i];
       if (
@@ -413,6 +705,7 @@ function mouseDown(e) {
       ) {
         dragOk = true;
         element.draggable = true;
+        printSquaresAvailables();
       }
     }
     positionX = rx;
@@ -446,13 +739,12 @@ function mouseUp(e) {
   let moveFin = infoSquareSelected(orderArray, rx, ry);
   dragOk = false;
 
-  if (disponble.length <= 0) {
-    printPieces();
-  }
-
   for (let i = 0; i < historyPieces.length; i++) {
     const element = historyPieces[i];
     if (element.draggable && canMove(moveFin)) {
+      usedSquared(moveFin) !== false
+        ? deletePiece(usedSquared(moveFin))
+        : undefined;
       element.x = moveFin.x;
       element.y = moveFin.y;
       mysound.play();
